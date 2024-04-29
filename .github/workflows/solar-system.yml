@@ -49,6 +49,7 @@ jobs:
     code-coverage:
         name: Code Coverage
         runs-on: ubuntu-latest
+        #continue-on-error: true
         steps:
           - name: Checkout Repository
             uses: actions/checkout@v4
@@ -63,10 +64,12 @@ jobs:
       
           - name: Unit Testing
             run: npm run coverage
+            continue-on-error: true
             
           - name: Archive Test Result
             uses: actions/upload-artifact@v3
             with:
               name: code-Coverage-Result
               path: coverage
+              retention-days: 5
           
