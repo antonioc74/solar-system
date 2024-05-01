@@ -19,7 +19,7 @@ jobs:
         name: Unit Testing
         strategy:
           matrix:
-            nodejs_version: ${{ vars.NODE_VERSIONS }} #[19, 20]
+            nodejs_version: ['${{ vars.NODE_VERSIONS }}'] #[19, 20]
             os: [ubuntu-latest]
              
         runs-on: ${{ matrix.os }}
