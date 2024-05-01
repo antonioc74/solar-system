@@ -86,6 +86,9 @@ jobs:
     
     docker:
       name: Containerization
+      # permission added to the GITHUB_TOKEN to allow docker push to GHCR
+      permissions: 
+        packages: write
       needs: [unit-testing, code-coverage]
       runs-on: ubuntu-latest
       steps: 
