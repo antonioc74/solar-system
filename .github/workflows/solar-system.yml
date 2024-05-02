@@ -61,7 +61,7 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: Mocha-Test-Result
-            path: test-results.xml
+            path: test-results.xm
     
     code-coverage:
         name: Code Coverage
@@ -187,6 +187,8 @@ jobs:
         #     kubeconfig: ${{ secrets.KUBECONFIG }}
         #     #context: <context name> # current-context from kubeconfig is used as default
         
+        - name: Check if is installed
+          run: kind 
         # Using Kind Cluster as there are no real clsusters to use
         - name: Setup Kind Cluster
           uses: helm/kind-action@v1
@@ -224,6 +226,10 @@ jobs:
             kubectl apply -f kubernetes/development/   
             sleep 10
             kubectl get deployments
+            
+
+          
+        
          
         
 
