@@ -183,8 +183,9 @@ jobs:
         #     method: kubeconfig
         #     kubeconfig: ${{ secrets.KUBECONFIG }}
         #     #context: <context name> # current-context from kubeconfig is used as default
-
-        - uses: engineerd/setup-kind@v0.5.0
+        
+        - name: Setup Kind Cluster
+          uses: helm/kind-action@v1
         
         - name: Fetch Kubernetes Cluster Details
           run: |
