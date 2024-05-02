@@ -167,6 +167,7 @@ jobs:
     dev-deploy:
       needs: docker
       runs-on: ubuntu-latest
+      environment: dev
 
       steps:
         - name: Checkout Repository
@@ -178,12 +179,14 @@ jobs:
              version: ${{ env.KUBECTL_VERSION }} # default is latest stable
           id: install
         
+        # uncomment for real cluster outside this pipeline. here we are using a Kind Cluster for testing
         #- uses: azure/k8s-set-context@v4
         #  with:
         #     method: kubeconfig
         #     kubeconfig: ${{ secrets.KUBECONFIG }}
         #     #context: <context name> # current-context from kubeconfig is used as default
         
+        # Using Kind Cluster as there are no real clsusters to use
         - name: Setup Kind Cluster
           uses: helm/kind-action@v1
         
@@ -193,4 +196,23 @@ jobs:
             #echo ----------------------------------------------------
             kubectl get nodes -o wide
         
+        - uses: cschleiden/replace-tokens@v1
+          with:
+            tokenPrefix: '_{_'
+            tokenSuffix: '_}_'
+            files: '["kubernetes/development/*.yaml"]'
+          env:
+            NAMEPSACE: test #${{ vars.NAMEPSACE }}
+            REPLICAS: 2 #${{ vars.REPLICAS }}
+            IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+            #INGRESS_IP: ${{ vars.INGRESS_IP }}
+        
+        - name: Apply Kubernetes Manifest
+          run: |
+            kubectl apply -f ../../kubernetes/development   
+            sleep 10
+            kubectl get deployments
+         
+        
+
         
