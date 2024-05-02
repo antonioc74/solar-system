@@ -187,11 +187,30 @@ jobs:
         #     kubeconfig: ${{ secrets.KUBECONFIG }}
         #     #context: <context name> # current-context from kubeconfig is used as default
         
-        - name: Check if is installed
-          run: kind 
+        - name: Create Kind Cluster
+          run: |
+            cat <<EOF | kind create cluster --config=-
+            kind: Cluster
+            apiVersion: kind.x-k8s.io/v1alpha4
+            nodes:
+            - role: control-plane
+              kubeadmConfigPatches:
+              - |
+                kind: InitConfiguration
+                nodeRegistration:
+                  kubeletExtraArgs:
+                    node-labels: "ingress-ready=true"
+              extraPortMappings:
+              - containerPort: 80
+                hostPort: 80
+                protocol: TCP
+              - containerPort: 443
+                hostPort: 443
+                protocol: TCP
+            EOF
         # Using Kind Cluster as there are no real clsusters to use
-        - name: Setup Kind Cluster
-          uses: helm/kind-action@v1
+        #- name: Setup Kind Cluster
+        #  uses: helm/kind-action@v1
         
         - name: Fetch Kubernetes Cluster Details
           run: |
@@ -199,16 +218,16 @@ jobs:
             #echo ----------------------------------------------------
             kubectl get nodes -o wide
         
-        #- name: Install Nginx Ingress Controller
-        #  run: | 
-        #    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-        #
-        #    kubectl wait --namespace ingress-nginx \
-        #      --for=condition=ready pod \
-        #      --selector=app.kubernetes.io/component=controller \
-        #      --timeout=300s
-        #    
-        #    echo "INGRESS_IP=$(kubectl -n ingress-nginx get service ingress-nginx.controller -o jsonpath="{.status.loadbalancer.ingress[0].ip}")" >> $GITHUB_ENV
+        - name: Install Nginx Ingress Controller
+          run: | 
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+        
+            kubectl wait --namespace ingress-nginx \
+              --for=condition=ready pod \
+              --selector=app.kubernetes.io/component=controller \
+              --timeout=120s
+            
+            echo "INGRESS_IP=$(kubectl -n ingress-nginx get service ingress-nginx.controller -o jsonpath="{.status.loadbalancer.ingress[0].ip}")" >> $GITHUB_ENV
         
         - uses: cschleiden/replace-tokens@v1
           with:
