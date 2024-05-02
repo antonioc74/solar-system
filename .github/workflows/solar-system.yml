@@ -209,7 +209,7 @@ jobs:
         
         - name: Apply Kubernetes Manifest
           run: |
-            kubectl apply -f ../../kubernetes/development   
+            kubectl apply -f /kubernetes/development   
             sleep 10
             kubectl get deployments
          
