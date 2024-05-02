@@ -64,16 +64,28 @@ jobs:
     
     code-coverage:
         name: Code Coverage
+        container: 
+          image: node:18
+        services:
+          mongodb:
+            image: siddharth67/mongo-db:non-prod
+            options: 
+              --name mongo
+        env:
+          MONGO_URI: 'mongodb://mongo:27017/superData'
+          MONGO_USERNAME: non-prod-user
+          MONGO_PASSWORD: non-prod-password
         runs-on: ubuntu-latest
         #continue-on-error: true
         steps:
           - name: Checkout Repository
             uses: actions/checkout@v4
   
-          - name: Setup NodeJS Version - ${{ env.NODE_VERSION }}
-            uses: actions/setup-node@v3
-            with:
-              node-version: ${{ env.NODE_VERSION }}
+          # Comment out as running this job in a container defined above in this step
+          #- name: Setup NodeJS Version - ${{ env.NODE_VERSION }}
+          #  uses: actions/setup-node@v3
+          #  with:
+          #    node-version: ${{ env.NODE_VERSION }}
           
           - name: Cache NPM Dependencies
             uses: actions/cache@v3
