@@ -12,7 +12,7 @@ env:
   MONGO_URI: 'mongodb+srv://supercluster.d83jj.mongodb.net/superData'
   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-  KUBECTL_VERSION: 1.26.0
+  KUBECTL_VERSION: 1.28.8
 
     
 jobs:
