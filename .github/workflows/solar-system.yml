@@ -12,7 +12,7 @@ env:
   MONGO_URI: 'mongodb+srv://supercluster.d83jj.mongodb.net/superData'
   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-  KUBECTL_VERSION: v1.28.8
+  KUBECTL_VERSION: v1.26.0
 
     
 jobs:
@@ -167,84 +167,64 @@ jobs:
     dev-deploy:
       needs: docker
       runs-on: ubuntu-latest
-      environment: dev
+      environment: development
 
       steps:
         - name: Checkout Repository
           uses: actions/checkout@v4
         
-        # Using Kind Cluster will install Kubectl CLI 
-        #- name: Install kubectl CLI
-        #  uses: azure/setup-kubectl@v3
-        #  with:
-        #     version: ${{ env.KUBECTL_VERSION }} # default is latest stable
-        #  id: install
+        # When Using Kind Cluster, it will install Kubectl CLI 
+        - name: Install kubectl CLI
+          uses: azure/setup-kubectl@v3
+          with:
+             version: ${{ env.KUBECTL_VERSION }} # default is latest stable
+          id: install
         
         # uncomment for real cluster outside this pipeline. here we are using a Kind Cluster for testing
-        #- uses: azure/k8s-set-context@v4
-        #  with:
-        #     method: kubeconfig
-        #     kubeconfig: ${{ secrets.KUBECONFIG }}
-        #     #context: <context name> # current-context from kubeconfig is used as default
+        - uses: azure/k8s-set-context@v4
+          with:
+             method: kubeconfig
+             kubeconfig: ${{ secrets.KUBECONFIG }}
+             #context: <context name> # current-context from kubeconfig is used as default
         
-        - name: Create Kind Cluster
-          run: |
-            cat <<EOF | kind create cluster --config=-
-            kind: Cluster
-            apiVersion: kind.x-k8s.io/v1alpha4
-            nodes:
-            - role: control-plane
-              kubeadmConfigPatches:
-              - |
-                kind: InitConfiguration
-                nodeRegistration:
-                  kubeletExtraArgs:
-                    node-labels: "ingress-ready=true"
-              extraPortMappings:
-              - containerPort: 80
-                hostPort: 80
-                protocol: TCP
-              - containerPort: 443
-                hostPort: 443
-                protocol: TCP
-            EOF
-        # Using Kind Cluster as there are no real clsusters to use
+        
+        ## Using Kind Cluster as there are no real clsusters to use
         #- name: Setup Kind Cluster
         #  uses: helm/kind-action@v1
         
         - name: Fetch Kubernetes Cluster Details
           run: |
-            #kubectl version --short -o yaml
+            kubectl version --short -o yaml
             #echo ----------------------------------------------------
-            kubectl get nodes -o wide
+            #kubectl get nodes -o wide
+        #
+        #- name: Install Nginx Ingress Controller
+        #  run: | 
+        #    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+        #
+        #    kubectl wait --namespace ingress-nginx \
+        #      --for=condition=ready pod \
+        #      --selector=app.kubernetes.io/component=controller \
+        #      --timeout=120s
+        #    
+        #    echo "INGRESS_IP=$(kubectl -n ingress-nginx get service ingress-nginx.controller -o jsonpath="{.status.loadbalancer.ingress[0].ip}")" >> $GITHUB_ENV
         
-        - name: Install Nginx Ingress Controller
-          run: | 
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-        
-            kubectl wait --namespace ingress-nginx \
-              --for=condition=ready pod \
-              --selector=app.kubernetes.io/component=controller \
-              --timeout=120s
-            
-            echo "INGRESS_IP=$(kubectl -n ingress-nginx get service ingress-nginx.controller -o jsonpath="{.status.loadbalancer.ingress[0].ip}")" >> $GITHUB_ENV
-        
-        - uses: cschleiden/replace-tokens@v1
-          with:
-            tokenPrefix: '_{_'
-            tokenSuffix: '_}_'
-            files: '["kubernetes/development/*.yaml"]'
-          env:
-            NAMEPSACE: test #${{ vars.NAMEPSACE }}
-            REPLICAS: 2 #${{ vars.REPLICAS }}
-            IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-            #INGRESS_IP: ${{ env.INGRESS_IP }}
-        
-        - name: Apply Kubernetes Manifest
-          run: |
-            kubectl apply -f kubernetes/development/   
-            sleep 10
-            kubectl get deployments
+        #- uses: cschleiden/replace-tokens@v1
+        #  with:
+        #    tokenPrefix: '_{_'
+        #    tokenSuffix: '_}_'
+        #    files: '["kubernetes/development/*.yaml"]'
+        #  env:
+        #    NAMEPSACE: test #${{ vars.NAMEPSACE }}
+        #    REPLICAS: 2 #${{ vars.REPLICAS }}
+        #    IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+        #    #INGRESS_IP: ${{ env.INGRESS_IP }}
+        #
+        #- name: Apply Kubernetes Manifest
+        #  run: |
+        #    kubectl apply -f kubernetes/development/   
+        #    sleep 10
+        #    kubectl get deployments
             
 
           
