@@ -168,3 +168,14 @@ jobs:
       if: contains(github.ref, 'feature/')
       needs: docker
       uses: ./.github/workflows/reuse-deployment.yml
+      secrets: 
+        kubeconfig: ${{ secrets.KUBECONFIG }}
+      with:
+        namespace: ${{ vars.NAMEPSACE  }}
+        replicas: ${{ vars.REPLICAS }}
+        dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+        k8s_manifest: kubernetes/development/
+        app_name: solar-system
+        
+
+        
