@@ -44,13 +44,16 @@ jobs:
             node-version: ${{ matrix.nodejs_version }}
         
         - name: Cache NPM dependencies
-          uses: actions/cache@v3
+          uses: ./.github/actions/npm-action
           with:
-            path: ~/.npm
-            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+            path-of-cache: node_modules
+          #uses: actions/cache@v3
+          #with:
+          #  path: ~/.npm
+          #  key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
-        - name: Install Dependencies
-          run: npm install
+        #- name: Install Dependencies
+        #  run: npm install
     
         - name: Unit Testing
           id: unit_test
