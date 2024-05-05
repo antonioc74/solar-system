@@ -1,0 +1,103 @@
+name: deployment - reuse workflow
+
+
+on:
+    workflow_call: 
+      inputs:
+        kubectl_version:
+          required: false
+          type: string
+          default: v1.26.0
+        namespace:
+          required: true
+          type: string
+        replicas:
+          required: true
+          type: number
+        dockerhub_username:
+          required: true
+          type: string
+        k8s_manifest:
+          required: true
+          type: string
+        app_name:
+          required: true
+          type: string
+        ingress_ip:
+          required: false
+          type: string
+      secrets:
+        kubeconfig:
+          required: false
+      
+        
+
+jobs:
+    reuse-deploy:
+        environment: development
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout Repository
+            uses: actions/checkout@v4
+          
+          # When Using Kind Cluster, it will install Kubectl CLI 
+          #- name: Install kubectl CLI
+          #  uses: azure/setup-kubectl@v3
+          #  with:
+          #     version: ${{ inputs.kubectl_version }} # default is latest stable
+          #  id: install
+          
+          # uncomment for real cluster outside this pipeline. here we are using a Kind Cluster for testing
+          #- uses: azure/k8s-set-context@v4
+          #  with:
+          #     method: kubeconfig
+          #     kubeconfig: ${{ secrets.kubeconfig }}
+          #     #context: <context name> # current-context from kubeconfig is used as default
+          
+          
+          ## Using Kind Cluster as there are no real clsusters to use
+          - name: Setup Kind Cluster
+            uses: helm/kind-action@v1
+          
+          - name: Fetch Kubernetes Cluster Details
+            run: |
+              kubectl version -o yaml
+              #echo ----------------------------------------------------
+              #kubectl get nodes -o wide
+          #
+          #- name: Install Nginx Ingress Controller
+          #  run: | 
+          #    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          #
+          #    kubectl wait --namespace ingress-nginx \
+          #      --for=condition=ready pod \
+          #      --selector=app.kubernetes.io/component=controller \
+          #      --timeout=120s
+          #    
+          #    echo "INGRESS_IP=$(kubectl -n ingress-nginx get service ingress-nginx.controller -o jsonpath="{.status.loadbalancer.ingress[0].ip}")" >> $GITHUB_ENV
+          
+          - uses: cschleiden/replace-tokens@v1
+            with:
+              tokenPrefix: '_{_'
+              tokenSuffix: '_}_'
+              files: '["${{ inputs.k8s_manifest }}*.yaml"]'
+            env:
+              NAMEPSACE: test #${{ inputs.namespace }}
+              REPLICAS: 2 #${{ inputs.replicas }}
+              IMAGE: ${{ inputs.dockerhub_username }}/${{ inputs.app_name }}:${{ github.sha }}
+              #INGRESS_IP: ${{ inputs.ingress_ip }}
+          
+          - name: Apply Kubernetes Manifest
+            run: |
+              kubectl apply -f ${{ inputs.k8s_manifest }}  
+              sleep 10
+              kubectl get deployments
+              
+  
+            
+          
+           
+          
+  
+          
+  
